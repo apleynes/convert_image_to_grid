@@ -69,15 +69,15 @@ async fn process_image(input: Option<HtmlInputElement>) -> Result<(String, Strin
     let img = img.as_ndarray3();
 
     // Quantize colors to 6^3 colors
-    let mut quantized_img = Array2::<u8>::zeros((img.dim().0, img.dim().1));
-    let num_colors_per_channel = 5;
-    for i in 0..img.dim().0 {
-        for j in 0..img.dim().1 {
-            let r_pixel = img.get((i, j, 0)).unwrap() / num_colors_per_channel;
-            let g_pixel = img.get((i, j, 1)).unwrap() / num_colors_per_channel;
-            let b_pixel = img.get((i, j, 2)).unwrap() / num_colors_per_channel;
+    let mut quantized_img = Array2::<u8>::zeros((img.dim().1, img.dim().2));
+    let num_colors_per_channel: u32 = 6;
+    for i in 0..img.dim().1 {
+        for j in 0..img.dim().2 {
+            let r_pixel = *img.get((0, i, j)).unwrap() as u32 / num_colors_per_channel;
+            let g_pixel = *img.get((1, i, j)).unwrap() as u32 / num_colors_per_channel;
+            let b_pixel = *img.get((2, i, j)).unwrap() as u32 / num_colors_per_channel;
             let quantized_pixel = num_colors_per_channel.pow(2) * r_pixel + num_colors_per_channel * g_pixel + b_pixel;
-            quantized_img[[i, j]] = quantized_pixel;
+            quantized_img[[i, j]] = quantized_pixel as u8;
         }
     }
     
@@ -85,7 +85,7 @@ async fn process_image(input: Option<HtmlInputElement>) -> Result<(String, Strin
     let mut grid_str = String::new();
     for i in 0..quantized_img.dim().0 {
         for j in 0..quantized_img.dim().1 {
-            grid_str.push_str(&quantized_img[[i, j]].to_string());
+            grid_str.push_str(&format!("{} ", quantized_img[[i, j]]));
         }
         grid_str.push_str("\n");
     }
@@ -118,7 +118,7 @@ fn App() -> impl IntoView {
 
     view! {
         <div class="container">
-            <h1>"TGV Image Denoising"</h1>
+            <h1>"Convert image to grid of color categories"</h1>
 
             <div class="upload-section">
                 <input 
@@ -143,7 +143,7 @@ fn App() -> impl IntoView {
 
             <div class="grid-container">
                 <h2>"Grid"</h2>
-                <pre>{grid_str}</pre>
+                <pre>{move || grid_str.get()}</pre>
             </div>
         </div>
     }
